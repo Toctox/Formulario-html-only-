@@ -211,12 +211,25 @@ $('#jobForm').addEventListener('submit',saveJob);
 ['jobTitle','jobCity','jobArea','jobDescription'].forEach(id=>$('#'+id).addEventListener('input',preview));
 ['filterArea','filterStatus','filterText'].forEach(id=>$('#'+id).addEventListener('input',render));
 $('#googleBtn').addEventListener('click',googleConnect);
-$('#searchJobsBtn').addEventListener('click',searchJobs);
+const searchBtn=$('#searchJobsBtn'); if(searchBtn) searchBtn.addEventListener('click',searchJobs);
 $('#clientIdInput').value=localStorage.getItem(LS.client)||(!CFG.googleClientId.startsWith('COLE_')?CFG.googleClientId:'');
 $('#saveClientId').addEventListener('click',()=>{localStorage.setItem(LS.client,$('#clientIdInput').value.trim());state.token=null;state.email=null;render();toast('Client ID salvo.');});
 $('#exportBtn').addEventListener('click',exportData);
 $('#importInput').addEventListener('change',e=>e.target.files[0]&&importData(e.target.files[0]));
 $('#clearBtn').addEventListener('click',()=>{if(confirm('Apagar todas as vagas e o histórico deste aparelho?')){state.jobs=[];state.history=[];save();render();toast('Dados apagados.');}});
-if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker' in navigator){
+  addEventListener('load', async ()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js?v=2026.09.18.2',{updateViaCache:'none'});
+      await reg.update();
+      let refreshing=false;
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        if(refreshing)return;
+        refreshing=true;
+        location.reload();
+      });
+    }catch(e){console.error('service worker',e);}
+  });
+}
 render();
 })();
