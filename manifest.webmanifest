@@ -1,13 +1,19 @@
 {
   "name": "JobPilot Natanael",
   "short_name": "JobPilot",
-  "start_url": "./",
+  "start_url": "./?app=2026.09.18.2",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#111827",
   "description": "Gerenciador pessoal de vagas e candidaturas.",
   "icons": [
-    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
-  ]
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "./?jobpilot"
 }
