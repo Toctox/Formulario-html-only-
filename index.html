@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="Gerenciador pessoal de vagas e candidaturas de Natanael Martins." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>JobPilot Natanael</title>
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Candidaturas pessoais</p>
+      <h1>JobPilot</h1>
+    </div>
+    <button id="googleBtn" class="btn btn-secondary compact">Conectar Google</button>
+  </header>
+
+  <main class="app-shell">
+    <section id="view-dashboard" class="view active" data-view="dashboard">
+      <div class="hero card">
+        <div>
+          <p class="muted">Painel de hoje</p>
+          <h2 id="greeting">Natanael</h2>
+          <p class="small">Serra • Vitória • Vila Velha</p>
+        </div>
+        <button class="btn btn-primary" data-action="open-add">+ Nova vaga</button>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat card"><span id="statTotal">0</span><small>Vagas</small></article>
+        <article class="stat card"><span id="statFit">0</span><small>Compatíveis</small></article>
+        <article class="stat card"><span id="statSent">0</span><small>Enviadas</small></article>
+        <article class="stat card"><span id="statManual">0</span><small>Portal/manual</small></article>
+      </div>
+
+      <section class="section-head">
+        <div>
+          <p class="eyebrow">Prioridade</p>
+          <h3>Vagas para revisar</h3>
+        </div>
+      </section>
+      <div id="priorityJobs" class="job-list"></div>
+    </section>
+
+    <section id="view-jobs" class="view" data-view="jobs">
+      <section class="section-head sticky-head">
+        <div>
+          <p class="eyebrow">Banco de vagas</p>
+          <h2>Vagas</h2>
+        </div>
+        <button class="btn btn-primary compact" data-action="open-add">+ Adicionar</button>
+      </section>
+
+      <div class="filters card">
+        <select id="filterArea" aria-label="Área">
+          <option value="">Todas as áreas</option>
+          <option value="LOGISTICA">Logística</option>
+          <option value="ADMINISTRATIVO">Administrativo</option>
+          <option value="RH_DP">RH/DP</option>
+        </select>
+        <select id="filterStatus" aria-label="Status">
+          <option value="">Todos os status</option>
+          <option value="NOVA">Nova</option>
+          <option value="REVISAR">Revisar</option>
+          <option value="MANUAL">Portal/manual</option>
+          <option value="ENVIADA">Enviada</option>
+          <option value="IGNORADA">Ignorada</option>
+        </select>
+        <input id="filterText" type="search" placeholder="Empresa, cargo ou cidade" />
+      </div>
+      <div id="jobsList" class="job-list"></div>
+    </section>
+
+    <section id="view-history" class="view" data-view="history">
+      <section class="section-head">
+        <div>
+          <p class="eyebrow">Rastreabilidade</p>
+          <h2>Histórico</h2>
+        </div>
+      </section>
+      <div id="historyList" class="timeline"></div>
+    </section>
+
+    <section id="view-settings" class="view" data-view="settings">
+      <section class="section-head">
+        <div>
+          <p class="eyebrow">Controle</p>
+          <h2>Configurações</h2>
+        </div>
+      </section>
+
+      <div class="card stack">
+        <h3>Google</h3>
+        <p id="googleStatus" class="small muted">Não conectado.</p>
+        <label>OAuth Client ID
+          <input id="clientIdInput" autocomplete="off" placeholder="...apps.googleusercontent.com" />
+        </label>
+        <button id="saveClientId" class="btn btn-secondary">Salvar Client ID</button>
+      </div>
+
+      <div class="card stack">
+        <h3>Currículos</h3>
+        <div id="resumeSettings"></div>
+      </div>
+
+      <div class="card stack">
+        <h3>Backup</h3>
+        <p class="small muted">As vagas ficam armazenadas neste aparelho. Exporte um backup regularmente.</p>
+        <div class="row">
+          <button id="exportBtn" class="btn btn-secondary">Exportar JSON</button>
+          <label class="btn btn-secondary file-label">Importar JSON<input id="importInput" type="file" accept="application/json" hidden /></label>
+        </div>
+        <button id="clearBtn" class="btn btn-danger ghost">Apagar dados locais</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button class="nav-item active" data-nav="dashboard"><span>⌂</span><small>Início</small></button>
+    <button class="nav-item" data-nav="jobs"><span>▤</span><small>Vagas</small></button>
+    <button class="nav-item" data-nav="history"><span>↻</span><small>Histórico</small></button>
+    <button class="nav-item" data-nav="settings"><span>⚙</span><small>Ajustes</small></button>
+  </nav>
+
+  <dialog id="jobDialog" class="dialog">
+    <form id="jobForm" method="dialog" class="dialog-card stack">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">Cadastro</p>
+          <h2>Nova vaga</h2>
+        </div>
+        <button type="button" class="icon-btn" data-action="close-add" aria-label="Fechar">×</button>
+      </div>
+
+      <input type="hidden" id="jobId" />
+      <label>Cargo*<input id="jobTitle" required placeholder="Assistente de Logística" /></label>
+      <label>Empresa*<input id="jobCompany" required placeholder="Empresa" /></label>
+      <div class="two-col">
+        <label>Cidade*<select id="jobCity" required>
+          <option value="Serra">Serra</option><option value="Vitória">Vitória</option><option value="Vila Velha">Vila Velha</option>
+        </select></label>
+        <label>Área<select id="jobArea"><option value="AUTO">Detectar</option><option value="LOGISTICA">Logística</option><option value="ADMINISTRATIVO">Administrativo</option><option value="RH_DP">RH/DP</option></select></label>
+      </div>
+      <label>Link da vaga<input id="jobUrl" type="url" placeholder="https://..." /></label>
+      <label>E-mail de candidatura<input id="jobEmail" type="email" placeholder="rh@empresa.com.br" /></label>
+      <label>Fonte<input id="jobSource" placeholder="Gupy, LinkedIn, site da empresa..." /></label>
+      <label>Descrição / requisitos<textarea id="jobDescription" rows="7" placeholder="Cole aqui a descrição da vaga para a triagem automática."></textarea></label>
+
+      <div id="analysisPreview" class="analysis-preview"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" data-action="close-add">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar vaga</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog" class="dialog">
+    <div id="detailContent" class="dialog-card stack"></div>
+  </dialog>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
