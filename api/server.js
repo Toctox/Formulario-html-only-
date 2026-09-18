@@ -127,4 +127,9 @@ const server = http.createServer(async (req,res)=>{
     res.end(JSON.stringify({error:'search_failed',message:String(e?.message||e)}));
   }
 });
-server.listen(PORT,()=>console.log('JobPilot search API listening on',PORT));
+server.listen(PORT,()=>{
+  console.log('JobPilot search API listening on',PORT);
+  bingRss('"Assistente Administrativo" "Serra" "ES" vagas emprego')
+    .then(items=>console.log('SEARCH_SELFTEST_OK',items.length))
+    .catch(err=>console.error('SEARCH_SELFTEST_ERROR',String(err?.message||err)));
+});
