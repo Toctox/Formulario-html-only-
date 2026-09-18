@@ -3,6 +3,7 @@
 const CFG=window.JOBPILOT_CONFIG;
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const LS={jobs:'jobpilot.jobs.v1',history:'jobpilot.history.v1',client:'jobpilot.clientId.v1'};
+const SEARCH_API='https://jobpilot-search.onrender.com/search';
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const state={jobs:read(LS.jobs,[]),history:read(LS.history,[]),token:null,email:null,tokenClient:null};
 const AREAS={LOGISTICA:'Logística',ADMINISTRATIVO:'Administrativo',RH_DP:'RH/DP'};
@@ -142,6 +143,62 @@ function nav(v){$$('.view').forEach(x=>x.classList.toggle('active',x.dataset.vie
 function exportData(){const blob=new Blob([JSON.stringify({version:1,exportedAt:now(),jobs:state.jobs,history:state.history},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='jobpilot-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);}
 async function importData(file){try{const d=JSON.parse(await file.text());if(!Array.isArray(d.jobs))throw 0;state.jobs=d.jobs;state.history=Array.isArray(d.history)?d.history:[];save();render();toast('Backup importado.')}catch{toast('Backup inválido.')}}
 
+async function searchJobs(){
+  const btn=$('#searchJobsBtn');
+  const original=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='Pesquisando…';
+  toast('Pesquisando vagas públicas…');
+  try{
+    const r=await fetch(SEARCH_API,{cache:'no-store'});
+    if(!r.ok)throw new Error('Busca indisponível');
+    const data=await r.json();
+    const incoming=Array.isArray(data.jobs)?data.jobs:[];
+    let added=0;
+    const existingUrls=new Set(state.jobs.map(j=>(j.url||'').replace(/[?#].*$/,'')).filter(Boolean));
+    const existingKeys=new Set(state.jobs.map(j=>norm([j.title,j.company,j.city].join('|'))));
+    for(const x of incoming){
+      const cleanUrl=(x.url||'').replace(/[?#].*$/,'');
+      const key=norm([x.title,x.company,x.city].join('|'));
+      if((cleanUrl&&existingUrls.has(cleanUrl))||existingKeys.has(key))continue;
+      const j={
+        id:uid(),
+        title:x.title||'Vaga encontrada',
+        company:x.company||'Empresa não identificada',
+        city:x.city||'Serra',
+        area:x.area||'AUTO',
+        url:x.url||'',
+        email:'',
+        source:x.source||'Pesquisa pública',
+        description:x.description||'',
+        status:'NOVA',
+        createdAt:now(),
+        updatedAt:now(),
+        discoveredAt:x.publishedAt||now()
+      };
+      const a=analyze(j);
+      if(j.area==='AUTO')j.area=a.area;
+      if(a.fit==='REVISAR')j.status='REVISAR';
+      state.jobs.push(j);
+      if(cleanUrl)existingUrls.add(cleanUrl);
+      existingKeys.add(key);
+      added++;
+    }
+    history('Pesquisa de vagas',added+' novas vagas importadas');
+    save();
+    render();
+    nav('jobs');
+    toast(added?added+' novas vagas adicionadas.':'Nenhuma vaga nova encontrada.');
+  }catch(e){
+    console.error(e);
+    history('Falha na pesquisa de vagas',String(e?.message||e));
+    toast('Não foi possível pesquisar agora.');
+  }finally{
+    btn.disabled=false;
+    btn.textContent=original;
+  }
+}
+
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-action],[data-nav]'); if(!b)return;
   if(b.dataset.nav)return nav(b.dataset.nav);
@@ -154,6 +211,7 @@ $('#jobForm').addEventListener('submit',saveJob);
 ['jobTitle','jobCity','jobArea','jobDescription'].forEach(id=>$('#'+id).addEventListener('input',preview));
 ['filterArea','filterStatus','filterText'].forEach(id=>$('#'+id).addEventListener('input',render));
 $('#googleBtn').addEventListener('click',googleConnect);
+$('#searchJobsBtn').addEventListener('click',searchJobs);
 $('#clientIdInput').value=localStorage.getItem(LS.client)||(!CFG.googleClientId.startsWith('COLE_')?CFG.googleClientId:'');
 $('#saveClientId').addEventListener('click',()=>{localStorage.setItem(LS.client,$('#clientIdInput').value.trim());state.token=null;state.email=null;render();toast('Client ID salvo.');});
 $('#exportBtn').addEventListener('click',exportData);
